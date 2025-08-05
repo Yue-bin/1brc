@@ -1,4 +1,4 @@
--- Maybe do not hard-code that. Retrieves evry .lua file that are not 
+-- Maybe do not hard-code that. Retrieves evry .lua file that are not
 -- the auxiliary scripts, and run them against both lua and luajit ?
 local scripts = {
 	{
@@ -30,6 +30,8 @@ local scripts = {
 		interpreter = "luajit",
 	},
 }
+
+scripts = { { path = "./1brc_moncak.lua", interpreter = "lua", } }
 
 -- This is required to measure better times
 local socket = require "socket"
@@ -77,24 +79,35 @@ local function bench(script_path, interpreter)
 	end
 end
 
+local function gen_new_data(count, output_file)
+	print("Generating fresh data...")
+	-- Create a fresh batch of data
+	os.remove("./measurements.txt")
+
+	-- For a modifyable count of measurements
+	-- require "createMeasurements"
+	local arg = {
+		count, -- Number of measurements to create
+		output_file, -- Output file
+	}
+	loadfile("./createMeasurements.lua", "bt", setmetatable({ arg = arg }, { __index = _G }))()
+
+	print("Data generated! Starting a full benchmark of evry scripts. This might take a while...")
+end
+
 if arg[1] then -- Check if an input script has been provided
 	-- If yes, benchmark this specific script
 	bench(arg[1], arg[2] or "lua")
 else -- If not, just benchmark evry script
-
-	print("Generating fresh data...")
-	-- Create a fresh batch of data
-	os.remove("./measurements.txt")
-	require "createMeasurements"
-
-	print("Data generated! Starting a full benchmark of evry scripts. This might take a while...")
+	--gen_new_data(1000, "measurements.txt") -- Generate new data
 	for _, script in pairs(scripts) do
 		script.result = bench(script.path, script.interpreter)
 	end
 	-- Sort the table to give the results in order
-	table.sort(scripts, function (i,j) return i.result < j.result end)
+	table.sort(scripts, function(i, j) return i.result < j.result end)
 	print("Finished Benchmarking evry script ! Here are the results:")
 	for i, script in pairs(scripts) do
-		print(string.format("Number %d: %s with %s interpreter runs in %.3f seconds average", i, script.path, script.interpreter, script.result))
+		print(string.format("Number %d: %s with %s interpreter runs in %.3f seconds average", i, script.path,
+			script.interpreter, script.result))
 	end
 end
