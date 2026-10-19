@@ -1,1 +1,7 @@
 measurements.txt
+
+# 编辑器本地历史
+.history/
+
+# 基准脚本输出
+output.csv
